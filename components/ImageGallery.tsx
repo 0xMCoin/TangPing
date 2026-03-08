@@ -71,8 +71,14 @@ export default function ImageGallery() {
 
     window.addEventListener('tangping:image-generated', handleImageGenerated);
 
+    // Atualiza automaticamente a cada 1 minuto
+    const intervalId = setInterval(() => {
+      fetchGallery();
+    }, 20000); // 60000ms = 1 minuto
+
     return () => {
       window.removeEventListener('tangping:image-generated', handleImageGenerated);
+      clearInterval(intervalId);
     };
   }, [fetchGallery]);
 
