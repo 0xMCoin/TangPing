@@ -1,4 +1,5 @@
 import ImageUploader from '@/components/ImageUploader';
+import ImageGallery from '@/components/ImageGallery';
 
 export default function HomePage() {
   return (
@@ -32,6 +33,10 @@ export default function HomePage() {
         </header>
 
         <ImageUploader />
+
+        <div className="mt-10">
+          <ImageGallery />
+        </div>
       </div>
     </main>
   );

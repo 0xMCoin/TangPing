@@ -9,6 +9,8 @@ type ApiSuccess = {
   ok: true;
   imageBase64: string;
   mimeType: string;
+  storageUrl?: string | null;
+  savedToSupabase?: boolean;
 };
 
 type ApiError = {
@@ -79,6 +81,14 @@ export default function ImageUploader() {
 
       const dataUrl = `data:${data.mimeType};base64,${data.imageBase64}`;
       setResultUrl(dataUrl);
+
+      if (data.savedToSupabase) {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('tangping:image-generated'));
+        }, 500);
+      } else {
+        console.log('[ImageUploader] Image not saved to Supabase (may not be configured)');
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unexpected error.';
       setError(message);
@@ -104,9 +114,8 @@ export default function ImageUploader() {
 
         <div
           {...getRootProps()}
-          className={`soft-grid flex min-h-[320px] cursor-pointer items-center justify-center rounded-[24px] border border-dashed border-white/15 bg-black/20 p-5 text-center transition ${
-            isDragActive ? 'dropzone-active' : 'hover:border-white/25 hover:bg-black/30'
-          }`}
+          className={`soft-grid flex min-h-[320px] cursor-pointer items-center justify-center rounded-[24px] border border-dashed border-white/15 bg-black/20 p-5 text-center transition ${isDragActive ? 'dropzone-active' : 'hover:border-white/25 hover:bg-black/30'
+            }`}
         >
           <input {...getInputProps()} />
 
@@ -144,11 +153,10 @@ export default function ImageUploader() {
                 key={option.value}
                 type="button"
                 onClick={() => setStyle(option.value)}
-                className={`rounded-[20px] border p-4 text-left transition ${
-                  active
-                    ? 'border-green-400 bg-green-500/10'
-                    : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                }`}
+                className={`rounded-[20px] border p-4 text-left transition ${active
+                  ? 'border-green-400 bg-green-500/10'
+                  : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                  }`}
               >
                 <div className="text-base font-bold">{option.label}</div>
                 <div className="mt-1 text-sm text-white/60">{option.description}</div>
