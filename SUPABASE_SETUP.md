@@ -2,9 +2,41 @@
 
 Este guia explica como configurar o Supabase para salvar e exibir as imagens geradas.
 
-**Nota:** As imagens são armazenadas diretamente no Replicate, então apenas salvamos a URL no banco de dados. Não é necessário criar buckets de Storage.
+**Nota:** As imagens geradas são automaticamente enviadas para o Supabase Storage para garantir que tenhamos controle total sobre os arquivos.
 
-## 1. Criar a Tabela no Banco de Dados
+## 1. Criar o Bucket de Storage
+
+1. Vá em **Storage** no menu lateral do Supabase
+2. Clique em **New bucket**
+3. Configure o bucket:
+   - **Name**: `tangping-images`
+   - **Public bucket**: ✅ **Marcar como público** (para permitir acesso às imagens)
+   - **File size limit**: Deixe o padrão ou ajuste conforme necessário
+   - **Allowed MIME types**: `image/jpeg, image/jpg, image/png` (ou deixe vazio para permitir todos)
+4. Clique em **Create bucket**
+
+### Configurar Políticas de Acesso do Storage
+
+Após criar o bucket, configure as políticas de acesso:
+
+1. Vá em **Storage** > **Policies** > **tangping-images**
+2. Clique em **New Policy**
+3. Selecione **For full customization**, clique em **Use a template** e escolha **Allow public read access**
+4. Execute o seguinte SQL no **SQL Editor**:
+
+```sql
+-- Política para permitir leitura pública do bucket
+CREATE POLICY "Public read access for tangping-images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'tangping-images');
+
+-- Política para permitir upload apenas via service role
+CREATE POLICY "Service role upload for tangping-images"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'tangping-images');
+```
+
+## 2. Criar a Tabela no Banco de Dados
 
 1. Vá em **SQL Editor** no menu lateral
 2. Execute o seguinte SQL:
@@ -13,8 +45,8 @@ Este guia explica como configurar o Supabase para salvar e exibir as imagens ger
 -- Criar tabela para armazenar metadados das imagens geradas
 CREATE TABLE IF NOT EXISTS generated_images (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  storage_path TEXT, -- Opcional, não usado mais (mantido para compatibilidade)
-  public_url TEXT NOT NULL, -- URL do Replicate onde a imagem está hospedada
+  storage_path TEXT NOT NULL, -- Caminho no Supabase Storage
+  public_url TEXT NOT NULL, -- URL pública da imagem no Supabase
   style TEXT NOT NULL CHECK (style IN ('cartoon', 'pixel', 'meme')),
   image_number INTEGER, -- Número sequencial da imagem (1, 2, 3, ...)
   username TEXT, -- Username opcional do criador da imagem
@@ -41,9 +73,9 @@ CREATE POLICY "Service role insert" ON generated_images
 **Se você já criou a tabela anteriormente**, execute este SQL para atualizar:
 
 ```sql
--- Atualizar tabela existente: tornar storage_path opcional e adicionar image_number
+-- Atualizar tabela existente: tornar storage_path obrigatório novamente
 ALTER TABLE generated_images 
-  ALTER COLUMN storage_path DROP NOT NULL;
+  ALTER COLUMN storage_path SET NOT NULL;
 
 -- Adicionar coluna image_number se não existir
 ALTER TABLE generated_images 
@@ -54,7 +86,7 @@ ALTER TABLE generated_images
   ADD COLUMN IF NOT EXISTS username TEXT;
 ```
 
-## 2. Configurar Variáveis de Ambiente
+## 3. Configurar Variáveis de Ambiente
 
 Adicione as seguintes variáveis no arquivo `.env.local`:
 
@@ -80,14 +112,17 @@ SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
    - Copie o valor de **service_role** `secret` key
    - ⚠️ **IMPORTANTE**: Esta chave é secreta e nunca deve ser exposta no cliente!
 
-## 3. Verificar Configuração
+## 4. Verificar Configuração
 
 Após configurar tudo:
 
 1. Reinicie o servidor de desenvolvimento: `pnpm dev`
 2. Gere uma imagem através da interface
 3. Verifique se a imagem aparece na galeria abaixo do formulário
-4. Verifique na tabela `generated_images` se o registro foi criado com a URL do Replicate
+4. Verifique no Storage se a imagem foi enviada para o bucket `tangping-images`
+5. Verifique na tabela `generated_images` se o registro foi criado com:
+   - `storage_path`: caminho no Storage (ex: `generated/tangping-1-1234567890.jpg`)
+   - `public_url`: URL pública do Supabase Storage
 
 ## Estrutura de Arquivos
 
