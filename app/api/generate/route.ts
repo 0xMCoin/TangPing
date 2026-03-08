@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get('image');
     const style = String(formData.get('style') || 'cartoon');
+    const username = formData.get('username') ? String(formData.get('username')).trim() : null;
 
     if (!(file instanceof File)) {
       return NextResponse.json({ ok: false, error: 'No image uploaded.' }, { status: 400 });
@@ -40,9 +41,12 @@ export async function POST(req: NextRequest) {
     const imageDataUrl = `data:${mimeType};base64,${base64}`;
 
     console.log('[generate] image ready as data URL');
+    if (username) {
+      console.log('[generate] username provided:', username);
+    }
 
-    // Usa o prompt completo do TANGPING
-    const prompt = buildPrompt(style);
+    // Usa o prompt completo do TANGPING (com username opcional)
+    const prompt = buildPrompt(style, username);
     console.log('[generate] prompt length:', prompt.length, 'characters');
 
     // Modelo nano-banana-2 com formato correto
@@ -119,12 +123,17 @@ export async function POST(req: NextRequest) {
       
       // Salva o registro na tabela com a URL do Replicate
       // Não incluímos storage_path para evitar constraint NOT NULL
-      const insertData = {
+      const insertData: any = {
         public_url: generatedUrl, // URL direta do Replicate
         style: style,
         image_number: imageNumber, // Número sequencial da imagem
         created_at: new Date().toISOString(),
       };
+      
+      // Adiciona username se fornecido
+      if (username) {
+        insertData.username = username;
+      }
       
       console.log('[generate] Insert data:', insertData);
       

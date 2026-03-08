@@ -21,6 +21,7 @@ type ApiError = {
 export default function ImageUploader() {
   const [file, setFile] = useState<File | null>(null);
   const [style, setStyle] = useState<StyleMode>('cartoon');
+  const [username, setUsername] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
@@ -67,6 +68,9 @@ export default function ImageUploader() {
       const formData = new FormData();
       formData.append('image', file);
       formData.append('style', style);
+      if (username.trim()) {
+        formData.append('username', username.trim());
+      }
 
       const response = await fetch('/api/generate', {
         method: 'POST',
@@ -163,6 +167,24 @@ export default function ImageUploader() {
               </button>
             );
           })}
+        </div>
+
+        <div className="mt-6">
+          <label htmlFor="username" className="mb-2 block text-sm font-semibold text-white/90">
+            Username (optional)
+          </label>
+          <input
+            id="username"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Your username will appear on the image"
+            maxLength={30}
+            className="w-full rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-white/40 focus:border-green-400/50 focus:bg-white/10 focus:outline-none"
+          />
+          <p className="mt-2 text-xs text-white/60">
+            If you put your username, it will be added to the generated image
+          </p>
         </div>
 
         <div className="mt-6 flex flex-col gap-4 sm:flex-row">

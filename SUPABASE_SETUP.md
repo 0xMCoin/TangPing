@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS generated_images (
   public_url TEXT NOT NULL, -- URL do Replicate onde a imagem está hospedada
   style TEXT NOT NULL CHECK (style IN ('cartoon', 'pixel', 'meme')),
   image_number INTEGER, -- Número sequencial da imagem (1, 2, 3, ...)
+  username TEXT, -- Username opcional do criador da imagem
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
@@ -47,6 +48,10 @@ ALTER TABLE generated_images
 -- Adicionar coluna image_number se não existir
 ALTER TABLE generated_images 
   ADD COLUMN IF NOT EXISTS image_number INTEGER;
+
+-- Adicionar coluna username se não existir
+ALTER TABLE generated_images 
+  ADD COLUMN IF NOT EXISTS username TEXT;
 ```
 
 ## 2. Configurar Variáveis de Ambiente

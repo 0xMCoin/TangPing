@@ -18,7 +18,7 @@ export const STYLE_OPTIONS: { value: StyleMode; label: string; description: stri
   },
 ];
 
-export function buildPrompt(style: StyleMode) {
+export function buildPrompt(style: StyleMode, username?: string | null) {
   // Base prompt following the TANGPING project specifications
   const basePrompt = `You are a professional illustrator converting uploaded character images into the TANGPING project's signature art style. Follow these rules with ZERO deviation:
 
@@ -62,7 +62,7 @@ COMPOSITION (1:1 SQUARE OUTPUT):
 
 - Mat takes up roughly 60% of the frame diagonally to the right
 
-- Chinese characters 躺平 in golden-yellow brushstroke font at the top-center of the image
+- Chinese characters 躺平 in golden-yellow brushstroke font at the top-center of the image${username ? `\n\n- USERNAME DISPLAY: Add the username "${username}" in a stylish, readable font (similar to the 躺平 typography style) positioned at the bottom-center of the image, just above the tatami mat edge. Use a golden-yellow or white color that contrasts well with the green background. The username should be clearly visible but not overpower the main composition.` : ''}
 
 - Background fills entire square frame with the green gradient
 
