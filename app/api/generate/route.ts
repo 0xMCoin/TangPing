@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Desabilita cache completamente
+export const fetchCache = 'force-no-store'; // Força não usar cache
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,

@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Desabilita cache completamente
+export const fetchCache = 'force-no-store'; // Força não usar cache
 
 export async function GET() {
   try {
@@ -38,18 +40,23 @@ export async function GET() {
       return NextResponse.json({ ok: false, error: 'Failed to fetch images.' }, { status: 500 });
     }
 
-    // Retorna com headers para evitar cache
+    // Retorna com headers agressivos para evitar cache (especialmente na Vercel)
+    const timestamp = Date.now();
     return NextResponse.json(
       {
         ok: true,
         images: data || [],
+        timestamp, // Inclui timestamp na resposta para debug
       },
       {
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
+          'CDN-Cache-Control': 'no-store',
+          'Vercel-CDN-Cache-Control': 'no-store',
           'Pragma': 'no-cache',
           'Expires': '0',
-          'X-Timestamp': Date.now().toString(),
+          'X-Timestamp': timestamp.toString(),
+          'X-Content-Type-Options': 'nosniff',
         },
       }
     );

@@ -26,13 +26,15 @@ export default function ImageGallery() {
     setLoading(true);
     setError(null);
     try {
-      // Adiciona timestamp para evitar cache do navegador
+      // Adiciona timestamp para evitar cache do navegador e Vercel
       const timestamp = Date.now();
-      const response = await fetch(`/api/gallery?t=${timestamp}`, {
+      const response = await fetch(`/api/gallery?t=${timestamp}&_=${Math.random()}`, {
         cache: 'no-store',
+        next: { revalidate: 0 }, // Força revalidação no Next.js
         headers: {
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
+          'Expires': '0',
         },
       });
       const data = (await response.json()) as ApiResponse;
