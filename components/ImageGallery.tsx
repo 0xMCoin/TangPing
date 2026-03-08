@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type GalleryImage = {
   id: string;
@@ -21,6 +22,13 @@ export default function ImageGallery() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Garante que o componente está montado antes de usar portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchGallery = useCallback(async () => {
     setLoading(true);
@@ -67,6 +75,25 @@ export default function ImageGallery() {
       window.removeEventListener('tangping:image-generated', handleImageGenerated);
     };
   }, [fetchGallery]);
+
+  // Fecha o modal com ESC
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedImage) {
+        setSelectedImage(null);
+      }
+    };
+
+    if (selectedImage) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden'; // Previne scroll do body
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedImage]);
 
   if (loading) {
     return (
@@ -157,7 +184,8 @@ export default function ImageGallery() {
         {images.map((image) => (
           <div
             key={image.id}
-            className="group relative overflow-hidden rounded-[20px] border border-white/10 bg-black/20 transition hover:border-white/20 hover:bg-black/30"
+            onClick={() => setSelectedImage(image)}
+            className="group relative cursor-pointer overflow-hidden rounded-[20px] border border-white/10 bg-black/20 transition hover:border-white/20 hover:bg-black/30 hover:scale-105"
           >
             <div className="relative aspect-square w-full">
               <Image
@@ -183,6 +211,74 @@ export default function ImageGallery() {
           </div>
         ))}
       </div>
+
+      {/* Modal de visualização - renderizado via portal no body */}
+      {mounted && selectedImage && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 p-4 backdrop-blur-md"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="relative max-h-[95vh] max-w-7xl w-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Botão fechar */}
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-20 md:-top-12 right-0 z-10 rounded-full border border-white/30 bg-black/80 p-3 text-white transition hover:bg-black hover:border-white/50"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Imagem */}
+            <div className="relative rounded-[24px] border border-white/20 bg-black/60 p-6 backdrop-blur-sm shadow-2xl w-full md:w-1/2">
+              <div className="relative aspect-square w-full overflow-hidden rounded-[20px]">
+                <Image
+                  src={selectedImage.public_url}
+                  alt={`TangPing ${selectedImage.style} style #${selectedImage.image_number || ''}`}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                  priority
+                />
+              </div>
+
+              {/* Informações */}
+              <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {selectedImage.image_number && (
+                    <div className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-black text-white backdrop-blur-sm">
+                      #{selectedImage.image_number}
+                    </div>
+                  )}
+                  <div className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white capitalize backdrop-blur-sm">
+                    {selectedImage.style}
+                  </div>
+                </div>
+                <a
+                  href={selectedImage.public_url}
+                  download={`tangping-${selectedImage.image_number || Date.now()}.jpg`}
+                  className="rounded-[18px] bg-white px-6 py-3 text-sm font-black text-black transition hover:bg-white/90 hover:scale-105"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Download
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </section>
   );
 }
